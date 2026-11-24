@@ -2,7 +2,7 @@
    Die App-Seite kommt zuerst aus dem Netz (damit Updates sofort ankommen).
    Ohne Netz oder bei sehr langsamer Verbindung kommt sie aus dem Speicher.
    Bei jedem Update dieser Datei die Versionsnummer erhöhen. */
-const CACHE = 'wurfbild-v1';
+const CACHE = 'wurfbild-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
