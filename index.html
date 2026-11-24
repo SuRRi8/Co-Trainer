@@ -230,14 +230,13 @@ h1,h2{margin:0;font-family:var(--font-display);font-weight:600;letter-spacing:.0
     <div class="seg" id="aHalf" aria-label="Halbzeit"><button data-ah="all">Gesamt</button><button data-ah="1">1. HZ</button><button data-ah="2">2. HZ</button></div>
     <div class="card">
       <div class="big" id="aTotal"></div>
-      <div class="split" id="aSplit"></div>
       <div class="chips" id="aChips"></div>
     </div>
     <div class="court-static"><svg id="courtA" class="heat" role="img" aria-label="Wurfbild – Position antippen"></svg></div>
     <div class="card">
       <h2 id="fHead">Spielzüge</h2>
       <div class="fgrid" id="fgrid"></div>
-      <p class="hint">Grün = Tore, Rot = kein Tor. Position im Feld antippen zeigt die Spielzüge von dort, Spielzug antippen zeigt nur dessen Würfe.</p>
+      <p class="hint">Punkte im Feld: grün = Tor, rot = kein Tor. Position im Feld antippen zeigt die Spielzüge von dort, Spielzug antippen zeigt nur dessen Würfe.</p>
       <button class="btn" id="btnImg">Als Bild exportieren</button>
     </div>
     <div class="card">
@@ -491,7 +490,7 @@ function undo(){
 /* ================= Rendern ================= */
 function renderPos(){
   const g = G();
-  $('#ctx').innerHTML = '<b>' + (g.half || 1) + '. Halbzeit</b> · ' + plW(g.shots.length) + ' · <span class="g">' + plT(goals(g.shots)) + '</span>';
+  $('#ctx').innerHTML = '<b>' + (g.half || 1) + '. Halbzeit</b> · ' + plW(g.shots.length);
   $('#teams').classList.toggle('ready', !!P);
   document.querySelectorAll('#teams button').forEach(b => { b.classList.remove('hit', 'miss'); b.textContent = teamName(g, b.dataset.team); b.style.cssText = colorStyle(teamColor(g, b.dataset.team)); b.disabled = !P; });
   const l = $('#last');
@@ -533,7 +532,6 @@ function renderAnalysis(){
   const shown = A.zone ? byTac.filter(s => s.zone === A.zone) : byTac;
 
   $('#aTotal').innerHTML = shown.length + '<small>' + (shown.length === 1 ? 'Wurf' : 'Würfe') + '</small>';
-  $('#aSplit').innerHTML = '<span class="g">' + plT(goals(shown)) + '</span><span class="r">' + misses(shown) + ' kein Tor</span>';
   $('#aChips').innerHTML =
     (A.zone ? '<button class="filter" data-clear="zone">' + esc(ZONES[A.zone]) + '  ✕</button>' : '') +
     (A.tac ? '<button class="filter" data-clear="tac">' + esc(tacLabel(g, tacKey)) + '  ✕</button>' : '');
@@ -546,9 +544,7 @@ function renderAnalysis(){
     p.style.fill = n ? 'rgba(255,255,255,' + (0.05 + 0.2 * n / max).toFixed(2) + ')' : '';
     p.classList.toggle('hot', A.zone === z);
   });
-  const stat = z => '<tspan class="zg">' + zs[z].tor + '</tspan> <tspan class="zr">' + zs[z].kein + '</tspan>';
-  CA.lbl.innerHTML = FIELD_ZONES.map(z => svgText(LABEL_POS[z][0], LABEL_POS[z][1], 1, 'zl', z) +
-    (zs[z].n ? (z === 'KM' ? svgText(2, LABEL_POS[z][1], 1, 'zs', stat(z)) : svgText(LABEL_POS[z][0], LABEL_POS[z][1] + 1.1, 1, 'zs', stat(z))) : '')).join('');
+  CA.lbl.innerHTML = FIELD_ZONES.map(z => svgText(LABEL_POS[z][0], LABEL_POS[z][1], 1, 'zl', z)).join('');
   CA.dots.innerHTML = shown.filter(s => s.zone !== '7M' && s.x != null).map(s => '<circle class="dot ' + (s.res || '') + '" cx="' + s.x + '" cy="' + s.y + '" r=".38"/>').join('');
 
   // Spielzug-Buttons mit Toren / Würfen (für die gewählte Position)
@@ -557,11 +553,10 @@ function renderAnalysis(){
     .map(t => ({id: t.id, code: t.code, color: t.color}));
   if(base.some(s => s.tac === SEVEN)) items.push({id: SEVEN, code: '7m', color: '#f1f5f9'});
   if(base.some(s => !s.tac)) items.push({id: 'none', code: '–', color: '#475569'});
-  const counts = rs => rs.length ? '<span class="pg">' + goals(rs) + '</span><span class="pr">' + misses(rs) + '</span>' : '–';
-  $('#fgrid').innerHTML = '<button class="fb all' + (A.tac ? '' : ' sel') + '" data-ftac=""><b>Alle</b><small>' + counts(byZone) + '</small></button>' +
+  $('#fgrid').innerHTML = '<button class="fb all' + (A.tac ? '' : ' sel') + '" data-ftac=""><b>Alle</b></button>' +
     items.map(t => {
       const rs = filterTac(byZone, t.id === 'none' ? null : t.id);
-      return '<button class="fb' + (rs.length ? '' : ' zero') + (A.tac === t.id ? ' sel' : '') + '" data-ftac="' + t.id + '" style="--c:' + esc(t.color) + ';--fg:' + fgFor(t.color) + '" aria-label="Spielzug ' + esc(t.code) + ': ' + plT(goals(rs)) + ', ' + misses(rs) + ' kein Tor"><b style="font-size:' + codeSize(26, t.code) + 'px">' + esc(t.code) + '</b><small>' + counts(rs) + '</small></button>';
+      return '<button class="fb' + (rs.length ? '' : ' zero') + (A.tac === t.id ? ' sel' : '') + '" data-ftac="' + t.id + '" style="--c:' + esc(t.color) + ';--fg:' + fgFor(t.color) + '" aria-label="Spielzug ' + esc(t.code) + '"><b style="font-size:' + codeSize(26, t.code) + 'px">' + esc(t.code) + '</b></button>';
     }).join('');
 
   $('#notes').innerHTML = notes(g, base).map(t => '<li>' + esc(t) + '</li>').join('');
@@ -574,10 +569,10 @@ function notes(g, shots){
   shots.filter(s => s.tac && s.tac !== SEVEN).forEach(s => (byT[s.tac] = byT[s.tac] || []).push(s));
   const tl = Object.keys(byT).map(id => ({id: id, s: byT[id], n: byT[id].length, tor: goals(byT[id])}));
   const most = tl.slice().sort((a, b) => b.n - a.n)[0];
-  if(most) out.push('Häufigster Spielzug: ' + tacShort(g, most.id) + ' (' + plW(most.n) + ', ' + plT(most.tor) + ').');
+  if(most) out.push('Häufigster Spielzug: ' + tacShort(g, most.id) + '.');
   const zs = zoneStats(shots);
   const zt = FIELD_ZONES.slice().sort((a, b) => zs[b].tor - zs[a].tor || zs[b].n - zs[a].n)[0];
-  if(zs[zt].tor) out.push('Die meisten Tore von: ' + ZONES[zt] + ' (' + plT(zs[zt].tor) + ').');
+  if(zs[zt].tor) out.push('Die meisten Tore von: ' + ZONES[zt] + '.');
   return out;
 }
 function summaryText(){
@@ -585,12 +580,12 @@ function summaryText(){
   const shots = halfShots(g);
   const zs = zoneStats(shots);
   const lines = ['Wurfbild ' + gameTitle(g) + ', ' + fmtDate(g.date), 'Würfe von ' + teamName(g, A.team || 'A') + ' – ' + (A.half === 'all' ? 'Gesamt' : A.half + '. Halbzeit'),
-    plW(shots.length) + ': ' + plT(goals(shots)) + ', ' + misses(shots) + ' kein Tor', '', 'Spielzüge:'];
+    plW(shots.length), '', 'Spielzüge:'];
   [...new Set(shots.map(s => s.tac || null))].map(id => ({id: id, rs: filterTac(shots, id)})).sort((a, b) => b.rs.length - a.rs.length).forEach(r => {
-    lines.push('- ' + tacLabel(g, r.id) + ': ' + plT(goals(r.rs)) + ', ' + misses(r.rs) + ' kein Tor');
+    lines.push('- ' + tacLabel(g, r.id) + ': ' + plW(r.rs.length));
   });
   lines.push('', 'Positionen:');
-  FIELD_ZONES.filter(z => zs[z].n).forEach(z => lines.push('- ' + ZONES[z] + ': ' + plT(zs[z].tor) + ', ' + zs[z].kein + ' kein Tor'));
+  FIELD_ZONES.filter(z => zs[z].n).forEach(z => lines.push('- ' + ZONES[z] + ': ' + plW(zs[z].n)));
   notes(g, shots).forEach((t, i) => { if(i === 0) lines.push(''); lines.push('• ' + t); });
   return lines.join('\n');
 }
@@ -767,7 +762,7 @@ function drawExport(g, shots, tac){
   const nT = goals(shots), nK = misses(shots), rated = nT + nK;
   let sx = tx; c.font = '600 32px ' + FB;
   const part = (txt, col) => { c.fillStyle = col; c.fillText(txt, sx, 204); sx += c.measureText(txt).width; };
-  part(plW(shots.length) + ' · ', EXP.text); part(plT(nT), EXP.tor); part(' · ', EXP.text); part(nK + ' kein Tor', EXP.kein);
+  part(plW(shots.length), EXP.text);
 
   // Feld
   const scale = (W - 2 * pad) / VB.w, ox = pad, oy = 250;
@@ -802,20 +797,10 @@ function drawExport(g, shots, tac){
   });
   c.restore();
 
-  // Beschriftung der Positionen: Kürzel, darunter Tore (grün) und kein Tor (rot)
+  // Beschriftung der Positionen (nur Kürzel, keine Zahlen)
   c.textAlign = 'center';
   FIELD_ZONES.forEach(z => {
-    const lx = px(LABEL_POS[z][0]), ly = py(LABEL_POS[z][1]);
-    c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '600 46px ' + FD; c.fillText(z, lx, ly);
-    if(!zs[z].n) return;
-    const sy = z === 'KM' ? ly : ly + 50, cx = z === 'KM' ? px(2.4) : lx;
-    c.font = '700 44px ' + FD;
-    const a = String(zs[z].tor), b = String(zs[z].kein), gap = 18;
-    const wa = c.measureText(a).width, wb = c.measureText(b).width, start = cx - (wa + gap + wb) / 2;
-    c.textAlign = 'left';
-    c.fillStyle = '#4ade80'; c.fillText(a, start, sy);
-    c.fillStyle = '#f87171'; c.fillText(b, start + wa + gap, sy);
-    c.textAlign = 'center';
+    c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '600 46px ' + FD; c.fillText(z, px(LABEL_POS[z][0]), py(LABEL_POS[z][1]));
   });
 
   // Legende und Fußzeile
@@ -826,8 +811,6 @@ function drawExport(g, shots, tac){
     c.fillStyle = col; c.beginPath(); c.arc(lx + 14, ly - 10, 14, 0, Math.PI * 2); c.fill();
     c.fillStyle = EXP.text; c.fillText(t, lx + 40, ly); lx += 40 + c.measureText(t).width + 44;
   });
-  c.font = '500 26px ' + FB;
-  [['Zahlen im Feld: ', EXP.muted], ['Tore', EXP.tor], [' · ', EXP.muted], ['Kein Tor', EXP.kein]].forEach(([t, col]) => { c.fillStyle = col; c.fillText(t, lx, ly); lx += c.measureText(t).width; });
   c.textAlign = 'right'; c.font = '600 26px ' + FD; c.fillStyle = EXP.muted;
   c.fillText('WURFBILD', W - pad, H - 40);
   return cv;
